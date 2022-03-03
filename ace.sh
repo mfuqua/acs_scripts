@@ -14,19 +14,33 @@ echo "The purpose of this script is to export cve data from Red Hat Advanced Clu
 
 set -e
 
+if command jq --version >/dev/null 2>$1 ; then
+  echo "Dependency check passed"
+else
+  echo "Please install jq, a json parsing package, for your system."
+  exit 1
+fi
+
+
 if [[ -z "${ACS_ENDPOINT}" ]]; then
   echo >&2 "A URL to access, stored in the environment variable ACS_ENDPOINT, must be set. Use format sub.domain.com, not including https:// nor /v1..."
   exit 1
+else
+  echo "ACS_ENDPOINT variable check passed"
 fi
 
 if [[ -z "${ACS_API_TOKEN}" ]]; then
   echo >&2 "An API Token, stored in the environment variable ACS_API_TOKEN, must be set. It must have read permissions for alerts, deployments, and images."
   exit 1
+else
+  echo "ACS_API_TOKEN variable check passed"
 fi
 
 if [[ -z "$1" ]]; then
-  echo >&2 "Please supply a blank (or existing) csv filename as the first argument for the bash script, ie: './export-cves-to--csv.sh output.csv'"
+  echo >&2 "Please supply a blank (or existing) csv filename as the first argument for the bash script, ie: './ace.sh output.csv'"
   exit 1
+else
+  echo "Export CSV check passed"
 fi
 
 output_file="$1"
@@ -37,8 +51,10 @@ function curl_central() {
 }
 
 # Collect all alerts
-cvss=7
+cvss=0
+echo "Getting findings with a CVSS score of ${cvss} or greater. This may take a few minutes, depending on number of findings."
 
+# Looking into ways to adjust granularity of reporting via different queries. Currently just gets all
 #res="$(curl_central "v1/alerts?query=Policy%3AFixable%20CVSS%20%3E%3D%20${cvss}")"
 res="$(curl_central "v1/alerts")"
 
