@@ -1,19 +1,31 @@
 #! /bin/bash
 
+
+echo "    #     #####   #####      #####  #     # #######    #######                                                 "
+echo "   # #   #     # #     #    #     # #     # #          #       #    # #####   ####  #####  ##### ###### #####  "
+echo "  #   #  #       #          #       #     # #          #        #  #  #    # #    # #    #   #   #      #    # "
+echo " #     # #        #####     #       #     # #####      #####     ##   #    # #    # #    #   #   #####  #    # "
+echo " ####### #             #    #        #   #  #          #         ##   #####  #    # #####    #   #      #####  "
+echo " #     # #     # #     #    #     #   # #   #          #        #  #  #      #    # #   #    #   #      #   #  "
+echo " #     #  #####   #####      #####     #    #######    ####### #    # #       ####  #    #   #   ###### #    # "
+                                                                                                               
+echo ""
+echo "The purpose of this script is to export cve data from Red Hat Advanced Cluster Security into a csv file, including all deployments and images"
+
 set -e
 
-if [[ -z "${ROX_ENDPOINT}" ]]; then
-  echo >&2 "ROX_ENDPOINT must be set"
+if [[ -z "${ACS_ENDPOINT}" ]]; then
+  echo >&2 "A URL to access, stored in the environment variable ACS_ENDPOINT, must be set. Use format sub.domain.com, not including https:// nor /v1..."
   exit 1
 fi
 
-if [[ -z "${ROX_API_TOKEN}" ]]; then
-  echo >&2 "ROX_API_TOKEN must be set"
+if [[ -z "${ACS_API_TOKEN}" ]]; then
+  echo >&2 "An API Token, stored in the environment variable ACS_API_TOKEN, must be set. It must have read permissions for alerts, deployments, and images."
   exit 1
 fi
 
 if [[ -z "$1" ]]; then
-  echo >&2 "usage: create-csv.sh <output filename>"
+  echo >&2 "Please supply a blank (or existing) csv filename as the first argument for the bash script, ie: './export-cves-to--csv.sh output.csv'"
   exit 1
 fi
 
@@ -21,7 +33,7 @@ output_file="$1"
 echo '"Deployment", "Image", "CVE", "CVSS Score", "Summary", "Component", "Version", "Fixed By", "Layer Index", "Layer Instruction"' > "${output_file}"
 
 function curl_central() {
-  curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" "https://${ROX_ENDPOINT}/$1"
+  curl -sk -H "Authorization: Bearer ${ACS_API_TOKEN}" "https://${ACS_ENDPOINT}/$1"
 }
 
 # Collect all alerts
