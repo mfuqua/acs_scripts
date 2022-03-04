@@ -43,6 +43,13 @@ else
   echo "Export CSV check passed"
 fi
 
+if [[ -z "${CVSS_VALUE}" ]]; then
+  echo >&2 "A minimum CVSS_VALUE score for filtering, stored in the environment variable CVSS, must be set. It can range from 0 to 10."
+  exit 1
+else
+  echo "CVSS_VALUE variable check passed"
+fi
+
 output_file="$1"
 echo '"Deployment", "Image", "CVE", "CVSS Score", "Summary", "Component", "Version", "Fixed By", "Layer Index", "Layer Instruction"' > "${output_file}"
 
@@ -50,13 +57,22 @@ function curl_central() {
   curl -sk -H "Authorization: Bearer ${ACS_API_TOKEN}" "https://${ACS_ENDPOINT}/$1"
 }
 
-# Collect all alerts
-cvss=0
-echo "Getting findings with a CVSS score of ${cvss} or greater. This may take a few minutes, depending on number of findings."
-
 # Looking into ways to adjust granularity of reporting via different queries. Currently just gets all
 #res="$(curl_central "v1/alerts?query=Policy%3AFixable%20CVSS%20%3E%3D%20${cvss}")"
 res="$(curl_central "v1/alerts")"
+
+# API access error handling
+test="$(echo ${res})"
+if [[ $test == *"error"* ]] ; then
+  echo "There was an error accessing the API."
+  echo "The error message was: $(echo ${test} | jq '.error')."
+  echo "Please address this access issue and retry."
+  exit 1
+fi
+
+# Collect all alerts
+cvss=${CVSS_VALUE}
+echo "Getting findings with a CVSS score of ${cvss} or greater. This may take a few minutes, depending on number of findings."
 
 # Iterate over all deployments and get the full deployment
 for deployment_id in $(echo "${res}" | jq -r .alerts[].deployment.id); do
@@ -88,3 +104,5 @@ for deployment_id in $(echo "${res}" | jq -r .alerts[].deployment.id); do
      fi
    done
   done
+
+{"error":"not authorized: \"READ_ACCESS\" for \"Alert\"","code":7,"message":"not authorized: \"READ_ACCESS\" for \"Alert\"","details":[]}
